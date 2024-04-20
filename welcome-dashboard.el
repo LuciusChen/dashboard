@@ -425,6 +425,7 @@ and parse it json and call (as CALLBACK)."
 (defun welcome-dashboard--refresh-screen ()
   "Show the welcome-dashboard screen."
   (setq welcome-dashboard-recentfiles (seq-take recentf-list 9))
+  (set-face-background 'fringe (face-attribute 'default :background))
   (with-current-buffer (get-buffer-create welcome-dashboard-buffer)
     (let* ((buffer-read-only)
            (image (create-image welcome-dashboard-image-file 'png nil :width welcome-dashboard-image-width :height welcome-dashboard-image-height))
