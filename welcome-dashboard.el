@@ -6,7 +6,7 @@
 ;; Maintainer: Mikael Konradsson <mikael.konradsson@outlook.com>
 ;; Created: 2023
 ;; Version: 0.1
-;; Package-Requires: ((emacs "27.1") (all-the-icons "5.0.0") (async "1.9.7"))
+;; Package-Requires: ((emacs "27.1") (async "1.9.7"))
 ;; Homepage: https://github.com/konrad1977/welcome-dashboard
 
 ;;; Commentary:
@@ -18,6 +18,7 @@
 (require 'recentf)
 (require 'url)
 (require 'vc)
+(require 'nerd-icons)
 
 ;;; Code:
 
@@ -33,7 +34,6 @@
 (defvar welcome-dashboard-temperature nil)
 (defvar welcome-dashboard-weatherdescription nil)
 (defvar welcome-dashboard-weathericon nil)
-(defvar welcome-dashboard-use-nerd-icons nil)
 
 (defcustom welcome-dashboard-title "Quick access [C-number to open file]"
   "Welcome-dashboard title."
@@ -101,9 +101,9 @@
                      (welcome-dashboard--open-recent-file-at-index ,i)))
 
       (define-key map (kbd (concat "C-x " (number-to-string i)))
-                           `(lambda ()
-                              (interactive)
-                              (welcome-dashboard--open-todos-at-index ,i))))
+                  `(lambda ()
+                     (interactive)
+                     (welcome-dashboard--open-todos-at-index ,i))))
 
     map)
   "Keymap for `welcome-dashboard-mode'.")
@@ -119,10 +119,6 @@
   (setq-local mode-line-format nil)
   (setq-local global-hl-line-mode nil)
 
-  (if welcome-dashboard-use-nerd-icons
-      (require 'nerd-icons)
-    (require 'all-the-icons))
-  
   (use-local-map welcome-dashboard-mode-map))
 
 (defface welcome-dashboard-title-face
@@ -202,39 +198,21 @@
 
 (defun welcome-dashboard--weather-icon-from-code (code)
   "Maps a weather (as CODE) to a corresponding string."
-  (if welcome-dashboard-use-nerd-icons
-      (progn
-        (nerd-icons-wicon
-      (pcase code
-        (`0 "nf-weather-day_sunny")
-        ((or `1 `2 `3) "nf-weather-cloudy")
-        ((or `45 `48) "nf-weather-fog")
-        ((or `51 `53 `55) "nf-weather-sleet")
-        ((or `56 `57) "nf-weather-snow")
-        ((or `61 `63 `65) "nf-weather-day_rain_mix")
-        ((or `66 `67) "nf-weather-rain-mix")
-        ((or `71 `73 `75) "nf-weather-snow")
-        (`77 "nf-weather-snow")
-        ((or `80 `81 `82) "nf-weather-rain")
-        ((or `85 `86) "nf-weather-rain-mix")
-        ((or `95 `96 `99) "nf-weather-thunderstorm")
-        (_ "Unknown"))))
-    (progn
-      (all-the-icons-icon-for-weather
-      (pcase code
-        (`0 "wi-day-sunny")
-        ((or `1 `2 `3) "wi-day-cloudy")
-        ((or `45 `48) "wi-day-fog")
-        ((or `51 `53 `55) "sleet")
-        ((or `56 `57) "wi-snow")
-        ((or `61 `63 `65) "wi-day-rain")
-        ((or `66 `67) "wi-day-rain-mix")
-        ((or `71 `73 `75) "wi-snow")
-        (`77 "wi-snow")
-        ((or `80 `81 `82) "wi-rain")
-        ((or `85 `86) "wi-rain-mix")
-        ((or `95 `96 `99) "wi-thunderstorm")
-        (_ "Unknown"))))))
+  (nerd-icons-wicon
+   (pcase code
+     (`0 "nf-weather-day_sunny")
+     ((or `1 `2 `3) "nf-weather-cloudy")
+     ((or `45 `48) "nf-weather-fog")
+     ((or `51 `53 `55) "nf-weather-sleet")
+     ((or `56 `57) "nf-weather-snow")
+     ((or `61 `63 `65) "nf-weather-day_rain_mix")
+     ((or `66 `67) "nf-weather-rain-mix")
+     ((or `71 `73 `75) "nf-weather-snow")
+     (`77 "nf-weather-snow")
+     ((or `80 `81 `82) "nf-weather-rain")
+     ((or `85 `86) "nf-weather-rain-mix")
+     ((or `95 `96 `99) "nf-weather-thunderstorm")
+     (_ "Unknown"))))
 
 (defun welcome-dashboard--weather-code-to-string (code)
   "Maps a weather (as CODE) to a corresponding string."
@@ -304,13 +282,6 @@ And adding an ellipsis."
            (ellipsis "..."))
       (concat head ellipsis tail))))
 
-(defun welcome-dashboard--file-icon (file)
-  "Get the icon for (FILE)."
-  (if welcome-dashboard-use-nerd-icons
-      (progn
-       (propertize (nerd-icons-icon-for-file file)))
-    (propertize (all-the-icons-icon-for-file file :v-adjust -0.05) 'face '(:family "all-the-icons" :height 1.0))))
-
 (defun welcome-dashboard--insert-recent-files ()
   "Insert the first x recent files with icons in the welcome-dashboard buffer."
   (recentf-mode)
@@ -324,22 +295,12 @@ And adding an ellipsis."
              (file-name (file-name-nondirectory file))
              (file-dir (file-name-directory file))
              (title (format "%s %s%s"
-                    (welcome-dashboard--file-icon file)
-                    (propertize (welcome-dashboard--truncate-path-in-middle file-dir welcome-dashboard-path-max-length) 'face 'welcome-dashboard-path-face)
-                    (propertize file-name 'face 'welcome-dashboard-filename-face)))
+                            (propertize (nerd-icons-icon-for-file file))
+                            (propertize (welcome-dashboard--truncate-path-in-middle file-dir welcome-dashboard-path-max-length) 'face 'welcome-dashboard-path-face)
+                            (propertize file-name 'face 'welcome-dashboard-filename-face)))
              (title-with-path (propertize title 'path full-path))
              (title-with-path-and-shortcut (concat title-with-path (propertize (format " [%s]" shortcut) 'face 'welcome-dashboard-shortcut-face))))
         (insert (format "%s%s\n" (make-string left-margin ?\s) title-with-path-and-shortcut))))))
-
-
-(defun welcome-dashboard--todo-icon ()
-  "Todo icon."
-  (if welcome-dashboard-use-nerd-icons
-      (propertize (nerd-icons-octicon "nf-oct-alert")
-                  'display '(raise 0))
-    (propertize (all-the-icons-octicon "alert")
-                'face `(:height 1.0)
-                'display '(raise 0))))
 
 (defun welcome-dashboard--insert-todos ()
   "Insert todos."
@@ -356,7 +317,8 @@ And adding an ellipsis."
              (type (nth 3 todo))
              (text (nth 4 todo))
              (title (format "%s %s %s %s"
-                            (welcome-dashboard--todo-icon)
+                            (propertize (nerd-icons-octicon "nf-oct-alert")
+                                        'display '(raise 0))
                             (propertize type 'face 'welcome-dashboard-todo-type-face)
                             (propertize (string-trim-left (welcome-dashboard--truncate-text-right text)) 'face 'welcome-dashboard-filename-face)
                             (propertize (format "[%s]" shortcut) 'face 'welcome-dashboard-shortcut-todo-face))))
@@ -366,10 +328,10 @@ And adding an ellipsis."
 (defun welcome-dashboard--calculate-padding-left ()
   "Calculate padding for left side."
   (if-let* ((files welcome-dashboard-recentfiles)
-         (max-length (apply #'max (mapcar (lambda (path) (length (welcome-dashboard--truncate-path-in-middle path welcome-dashboard-path-max-length))) files)))
-         (filenames (mapcar (lambda (path) (file-name-nondirectory path)) files))
-         (max-filename-length (/ (apply #'max (mapcar 'length filenames)) 2))
-         (left-margin (max (+ welcome-dashboard-min-left-padding max-filename-length) (/ (- (window-width) max-length) 2))))
+            (max-length (apply #'max (mapcar (lambda (path) (length (welcome-dashboard--truncate-path-in-middle path welcome-dashboard-path-max-length))) files)))
+            (filenames (mapcar (lambda (path) (file-name-nondirectory path)) files))
+            (max-filename-length (/ (apply #'max (mapcar 'length filenames)) 2))
+            (left-margin (max (+ welcome-dashboard-min-left-padding max-filename-length) (/ (- (window-width) max-length) 2))))
       (- left-margin max-filename-length)
     welcome-dashboard-min-left-padding))
 
@@ -415,7 +377,7 @@ And adding an ellipsis."
     (add-hook 'window-size-change-functions #'welcome-dashboard--redisplay-buffer-on-resize)
     (add-hook 'emacs-startup-hook (lambda ()
                                     (welcome-dashboard--refresh-screen)
-                                    (welcome-dashboard--fetch-todos)
+                                    ;; (welcome-dashboard--fetch-todos)
                                     (when (welcome-dashboard--show-weather-info)
                                       (welcome-dashboard--fetch-weather-data))))))
 
@@ -425,38 +387,21 @@ And adding an ellipsis."
       (concat (substring text 0 67) "...")
     text))
 
-
-(defun welcome-dashboard--clock-icon ()
-  "Get the clock icon."
-  (if welcome-dashboard-use-nerd-icons
-      (propertize (nerd-icons-octicon "nf-oct-clock")
-                  'display '(raise 0))
-    (propertize (all-the-icons-octicon "clock")
-                'face `(:family ,(all-the-icons-octicon-family) :height 1.0)
-                'display '(raise 0))))
-
 (defun welcome-dashboard--insert-startup-time ()
   "Insert startup time."
   (welcome-dashboard--insert-text (format "%s %s %s %s"
-                                          (welcome-dashboard--clock-icon)
+                                          (propertize (nerd-icons-octicon "nf-oct-clock")
+                                                      'display '(raise 0))
                                           (propertize "Startup time:" 'face 'welcome-dashboard-text-info-face)
                                           (propertize (emacs-init-time "%.2f") 'face 'welcome-dashboard-startup-time-face)
                                           (propertize "seconds" 'face 'welcome-dashboard-text-info-face))))
 
 
-(defun welcome-dashboard--package-icon ()
-  "Get the package icon."
-  (if welcome-dashboard-use-nerd-icons
-      (propertize (nerd-icons-codicon "nf-cod-package")
-                  'display '(raise -0.1))
-    (propertize (all-the-icons-octicon "package")
-                'face `(:family ,(all-the-icons-octicon-family) :height 1.0)
-                'display '(raise -0.1))))
-
 (defun welcome-dashboard--insert-package-info (packages)
   "Insert package info as (PACKAGES)."
   (welcome-dashboard--insert-text (format "%s %s %s"
-                                          (welcome-dashboard--package-icon)
+                                          (propertize (nerd-icons-codicon "nf-cod-package")
+                                                      'display '(raise -0.1))
                                           (propertize packages 'face 'welcome-dashboard-info-face 'display '(raise -0.1))
                                           (propertize "packages loaded" 'face 'welcome-dashboard-text-info-face 'display '(raise -0.1)))))
 
@@ -479,10 +424,10 @@ And adding an ellipsis."
   (when (welcome-dashboard--show-weather-info)
     (if welcome-dashboard-weatherdescription
         (welcome-dashboard--insert-text (format "%s %s, %s%s"
-                                      (propertize welcome-dashboard-weathericon 'face '(:family "Weather icons" :height 1.0) 'display '(raise 0))
-                                      (propertize welcome-dashboard-weatherdescription 'face 'welcome-dashboard-weather-description-face)
-                                      (propertize welcome-dashboard-temperature 'face 'welcome-dashboard-weather-temperature-face)
-                                      (propertize (welcome-dashboard--temperature-symbol) 'face 'welcome-dashboard-text-info-face)))
+                                                (propertize welcome-dashboard-weathericon 'face '(:family "Weather icons" :height 1.0) 'display '(raise 0))
+                                                (propertize welcome-dashboard-weatherdescription 'face 'welcome-dashboard-weather-description-face)
+                                                (propertize welcome-dashboard-temperature 'face 'welcome-dashboard-weather-temperature-face)
+                                                (propertize (welcome-dashboard--temperature-symbol) 'face 'welcome-dashboard-text-info-face)))
       (welcome-dashboard--insert-text (propertize "Loading weather data..." 'face 'welcome-dashboard-weather-temperature-face)))))
 
 (defun welcome-dashboard--parse-todo-result (result)
@@ -531,13 +476,13 @@ and parse it json and call (as CALLBACK)."
 (defun welcome-dashboard--package-length ()
   "Get the number of installed packages."
   (cond
-    ((bound-and-true-p package-alist)
-     (length package-activated-list))
-    ((boundp 'straight--profile-cache)
-     (hash-table-count straight--profile-cache))
-    ((boundp 'elpaca--queued)
-     (length elpaca--queued))
-    (t 0)))
+   ((bound-and-true-p package-alist)
+    (length package-activated-list))
+   ((boundp 'straight--profile-cache)
+    (hash-table-count straight--profile-cache))
+   ((boundp 'elpaca--queued)
+    (length elpaca--queued))
+   (t 0)))
 
 (defun welcome-dashboard--refresh-screen ()
   "Show the welcome-dashboard screen."
