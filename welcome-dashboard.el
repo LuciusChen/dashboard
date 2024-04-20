@@ -17,7 +17,6 @@
 (require 'json)
 (require 'recentf)
 (require 'url)
-(require 'vc)
 (require 'nerd-icons)
 
 ;;; Code:
@@ -29,8 +28,6 @@
 (defvar welcome-dashboard-todos '()
   "Todos.")
 
-(defvar welcome-dashboard-last-project-name nil)
-
 (defvar welcome-dashboard-temperature nil)
 (defvar welcome-dashboard-weatherdescription nil)
 (defvar welcome-dashboard-weathericon nil)
@@ -39,11 +36,6 @@
   "Welcome-dashboard title."
   :group 'welcome-dashboard
   :type '(string))
-
-(defcustom welcome-dashboard-use-fahrenheit nil
-  "Show weather temperature in fahrenheit."
-  :group 'welcome-dashboard
-  :type '(boolean))
 
 (defcustom welcome-dashboard-min-left-padding 10
   "Minimum left padding when resizing window."
@@ -191,11 +183,6 @@
   "Face for temperature."
   :group 'welcome-dashboard)
 
-(defface welcome-dashboard-project-face
-  '((t :foreground "#f38ba8" :bold t))
-  "Face for project name."
-  :group 'welcome-dashboard)
-
 (defun welcome-dashboard--weather-icon-from-code (code)
   "Maps a weather (as CODE) to a corresponding string."
   (nerd-icons-wicon
@@ -302,28 +289,6 @@ And adding an ellipsis."
              (title-with-path-and-shortcut (concat title-with-path (propertize (format " [%s]" shortcut) 'face 'welcome-dashboard-shortcut-face))))
         (insert (format "%s%s\n" (make-string left-margin ?\s) title-with-path-and-shortcut))))))
 
-(defun welcome-dashboard--insert-todos ()
-  "Insert todos."
-  (when (> (length welcome-dashboard-todos) 0)
-    (welcome-dashboard--insert-text
-     (format "%s %s %s"
-             (propertize "You got work todo in" 'face 'welcome-dashboard-subtitle-face)
-             (propertize welcome-dashboard-last-project-name 'face 'welcome-dashboard-project-face)
-             (propertize "project" 'face 'welcome-dashboard-subtitle-face)))
-    (dolist (todo welcome-dashboard-todos)
-      (let* ((index (cl-position todo welcome-dashboard-todos :test #'equal))
-             (shortcut (format "%d" (+ index +1)))
-             (path (nth 0 todo))
-             (type (nth 3 todo))
-             (text (nth 4 todo))
-             (title (format "%s %s %s %s"
-                            (propertize (nerd-icons-octicon "nf-oct-alert")
-                                        'display '(raise 0))
-                            (propertize type 'face 'welcome-dashboard-todo-type-face)
-                            (propertize (string-trim-left (welcome-dashboard--truncate-text-right text)) 'face 'welcome-dashboard-filename-face)
-                            (propertize (format "[%s]" shortcut) 'face 'welcome-dashboard-shortcut-todo-face))))
-        (welcome-dashboard--insert-text
-         (propertize title 'path path))))))
 
 (defun welcome-dashboard--calculate-padding-left ()
   "Calculate padding for left side."
@@ -361,9 +326,7 @@ And adding an ellipsis."
                            (weather-code (cdr (assoc 'weathercode current-weather)))
                            (weather-icon (welcome-dashboard--weather-icon-from-code weather-code)))
                       (setq welcome-dashboard-weathericon weather-icon)
-                      (if welcome-dashboard-use-fahrenheit
-                          (setq welcome-dashboard-temperature (format "%.1f" (+ (* temp 1.8) 32)))
-                        (setq welcome-dashboard-temperature (format "%.1f" temp)))
+                      (setq welcome-dashboard-temperature (format "%.1f" temp))
                       (setq welcome-dashboard-weatherdescription (format "%s" (welcome-dashboard--weather-code-to-string weather-code))))
                     (welcome-dashboard--refresh-screen))
                   nil
@@ -405,12 +368,6 @@ And adding an ellipsis."
                                           (propertize packages 'face 'welcome-dashboard-info-face 'display '(raise -0.1))
                                           (propertize "packages loaded" 'face 'welcome-dashboard-text-info-face 'display '(raise -0.1)))))
 
-(defun welcome-dashboard--temperature-symbol ()
-  "Get the correct type of temperature symbol."
-  (if welcome-dashboard-use-fahrenheit
-      "℉"
-    "℃"))
-
 (defun welcome-dashboard--show-weather-info ()
   "Check if we latitude and longitude and then show weather info."
   (let ((latitude welcome-dashboard-latitude)
@@ -424,10 +381,10 @@ And adding an ellipsis."
   (when (welcome-dashboard--show-weather-info)
     (if welcome-dashboard-weatherdescription
         (welcome-dashboard--insert-text (format "%s %s, %s%s"
-                                                (propertize welcome-dashboard-weathericon 'face '(:family "Weather icons" :height 1.0) 'display '(raise 0))
+                                                (propertize (nerd-icons-wicon "nf-weather-day_cloudy") 'display '(raise 0))
                                                 (propertize welcome-dashboard-weatherdescription 'face 'welcome-dashboard-weather-description-face)
                                                 (propertize welcome-dashboard-temperature 'face 'welcome-dashboard-weather-temperature-face)
-                                                (propertize (welcome-dashboard--temperature-symbol) 'face 'welcome-dashboard-text-info-face)))
+                                                (propertize "℃" 'face 'welcome-dashboard-text-info-face)))
       (welcome-dashboard--insert-text (propertize "Loading weather data..." 'face 'welcome-dashboard-weather-temperature-face)))))
 
 (defun welcome-dashboard--parse-todo-result (result)
@@ -453,25 +410,6 @@ and parse it json and call (as CALLBACK)."
       (shell-command-to-string ,command))
    `(lambda (result)
       (funcall ,callback result))))
-
-(defun welcome-dashboard--last-root ()
-  "Get the version control root directory of the most recent file."
-  (when (> (length welcome-dashboard-recentfiles) 0)
-    (let ((file (car welcome-dashboard-recentfiles)))
-      (vc-find-root file ".git"))))
-
-(defun welcome-dashboard--fetch-todos ()
-  "Fetch todos."
-  (when (and (executable-find "rg") (welcome-dashboard--last-root))
-    (let* ((root (welcome-dashboard--last-root))
-           (projectname (file-name-nondirectory (directory-file-name root)))
-           (command (format "rg -e \"(TODO|FIX|FIXME|PERF|HACK|NOTE):\s+\" --color=never --no-heading --with-filename --line-number --column --sort path %s" root)))
-      (setq welcome-dashboard-last-project-name projectname)
-      (welcome-dashboard--async-command-to-string
-       :command command
-       :callback `(lambda (result)
-                    (setq welcome-dashboard-todos (seq-take (welcome-dashboard--parse-todo-result result) 9))
-                    (welcome-dashboard--refresh-screen))))))
 
 (defun welcome-dashboard--package-length ()
   "Get the number of installed packages."
@@ -501,10 +439,6 @@ and parse it json and call (as CALLBACK)."
         (welcome-dashboard--insert-text (propertize welcome-dashboard-title 'face 'welcome-dashboard-title-face))
         (welcome-dashboard--insert-recent-files)
         (setq cursor-type nil)
-
-        (insert "\n")
-        (welcome-dashboard--insert-todos)
-        ;; (welcome-dashboard--insert-text (make-string 60 ?-))
 
         (insert "\n")
         (welcome-dashboard--insert-startup-time)
