@@ -340,7 +340,6 @@ And adding an ellipsis."
     (add-hook 'window-size-change-functions #'welcome-dashboard--redisplay-buffer-on-resize)
     (add-hook 'emacs-startup-hook (lambda ()
                                     (welcome-dashboard--refresh-screen)
-                                    ;; (welcome-dashboard--fetch-todos)
                                     (when (welcome-dashboard--show-weather-info)
                                       (welcome-dashboard--fetch-weather-data))))))
 
@@ -381,7 +380,7 @@ And adding an ellipsis."
   (when (welcome-dashboard--show-weather-info)
     (if welcome-dashboard-weatherdescription
         (welcome-dashboard--insert-text (format "%s %s, %s%s"
-                                                (propertize (nerd-icons-wicon "nf-weather-day_cloudy") 'display '(raise 0))
+                                                (propertize welcome-dashboard-weathericon 'face '(:family "Weather icons" :height 1.0) 'display '(raise 0))
                                                 (propertize welcome-dashboard-weatherdescription 'face 'welcome-dashboard-weather-description-face)
                                                 (propertize welcome-dashboard-temperature 'face 'welcome-dashboard-weather-temperature-face)
                                                 (propertize "℃" 'face 'welcome-dashboard-text-info-face)))
