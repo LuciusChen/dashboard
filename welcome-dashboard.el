@@ -163,16 +163,6 @@
   "Face for recent files shortcuts."
   :group 'welcome-dashboard)
 
-(defface welcome-dashboard-shortcut-todo-face
-  '((t :foreground "#abd47c" :height 0.9 :bold t))
-  "Face for todo shortcuts."
-  :group 'welcome-dashboard)
-
-(defface welcome-dashboard-todo-type-face
-  '((t :foreground "#585b70" :height 0.9 :bold t))
-  "Face for todo shortcuts."
-  :group 'welcome-dashboard)
-
 (defface welcome-dashboard-weather-icon-face
   '((t :height 0.9))
   "Face for weather icon."
