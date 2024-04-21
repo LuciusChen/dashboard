@@ -25,9 +25,6 @@
 (defvar welcome-dashboard-recentfiles '()
   "Recent list.")
 
-(defvar welcome-dashboard-todos '()
-  "Todos.")
-
 (defvar welcome-dashboard-temperature nil)
 (defvar welcome-dashboard-weatherdescription nil)
 (defvar welcome-dashboard-weathericon nil)
@@ -90,12 +87,7 @@
       (define-key map (kbd (concat "C-" (number-to-string i)))
                   `(lambda ()
                      (interactive)
-                     (welcome-dashboard--open-recent-file-at-index ,i)))
-
-      (define-key map (kbd (concat "C-x " (number-to-string i)))
-                  `(lambda ()
-                     (interactive)
-                     (welcome-dashboard--open-todos-at-index ,i))))
+                     (welcome-dashboard--open-recent-file-at-index ,i))))
 
     map)
   "Keymap for `welcome-dashboard-mode'.")
@@ -149,7 +141,7 @@
   :group 'welcome-dashboard)
 
 (defface welcome-dashboard-weather-description-face
-  '((t :foreground "#f9e2af" :height 0.9 :weight thin :bold nil :italic nil))
+  '((t :foreground "#E2943B" :height 0.9 :weight thin :bold nil :italic nil))
   "Face for weather description."
   :group 'welcome-dashboard)
 
@@ -159,7 +151,7 @@
   :group 'welcome-dashboard)
 
 (defface welcome-dashboard-shortcut-face
-  '((t :foreground "#f9e2af" :height 0.9 :bold t))
+  '((t :foreground "#E2943B" :height 0.9 :bold t))
   "Face for recent files shortcuts."
   :group 'welcome-dashboard)
 
@@ -232,20 +224,6 @@
   (let ((files welcome-dashboard-recentfiles))
     (when (<= 1 index (length files))
       (find-file (nth (1- index) files)))))
-
-(defun welcome-dashboard--open-todos-at-index (index)
-  "Open the todo at INDEX."
-  (interactive "nIndex: ")
-  (let ((todos welcome-dashboard-todos))
-    (when (<= 1 index (length todos))
-      (let* ((todo (nth (1- index) todos))
-             (file (nth 0 todo))
-             (line (string-to-number (nth 1 todo)))
-             (column (string-to-number (nth 2 todo))))
-        (find-file file)
-        (goto-char (point-min))
-        (forward-line (1- line))
-        (forward-char (1- column))))))
 
 (defun welcome-dashboard--truncate-path-in-middle (path n)
   "Truncate the middle of PATH to length N by removing characters.
