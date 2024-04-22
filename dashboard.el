@@ -21,7 +21,7 @@
 
 ;;; Code:
 
-(defvar dashboard-mode nil)
+(defvar welcome-dashboard-mode nil)
 (defvar dashboard-recentfiles '()
   "Recent list.")
 
@@ -92,7 +92,7 @@
     map)
   "Keymap for `dashboard-mode'.")
 
-(define-derived-mode dashboard-mode fundamental-mode "dashboard"
+(define-derived-mode welcome-dashboard-mode fundamental-mode "dashboard"
   "Major mode for the dashboard screen."
   :group 'dashboard
   :syntax-table nil
@@ -421,7 +421,7 @@ and parse it json and call (as CALLBACK)."
 
         (switch-to-buffer dashboard-buffer)
         (read-only-mode +1)
-        (dashboard-mode)
+        (welcome-dashboard-mode)
         (goto-char (point-min))
         (forward-line 3)))))
 
