@@ -1,4 +1,4 @@
-;;; welcome-dashboard.el --- Simple welcome-dashboard screen -*- lexical-binding: t -*-
+;;; dashboard.el --- Simple welcome-dashboard screen -*- lexical-binding: t -*-
 
 ;; Welcome-dashboard screen
 
