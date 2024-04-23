@@ -250,7 +250,8 @@ And adding an ellipsis."
              (file-name (file-name-nondirectory file))
              (file-dir (file-name-directory file))
              (title (format "%s %s%s"
-                            (propertize (cond ((file-directory-p file) (nerd-icons-icon-for-dir file))
+                            (propertize (cond ((not (file-exists-p file)) (nerd-icons-mdicon "nf-md-alert_remove" :face '(:inherit nerd-icons-orange)))
+                                              ((file-directory-p file) (nerd-icons-icon-for-dir file))
                                               (t (nerd-icons-icon-for-file file))))
                             (propertize (dashboard--truncate-path-in-middle file-dir dashboard-path-max-length) 'face 'dashboard-path-face)
                             (propertize file-name 'face 'dashboard-filename-face)))
