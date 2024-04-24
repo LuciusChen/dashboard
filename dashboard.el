@@ -102,6 +102,7 @@
   (setq-local truncate-lines t)
   (setq-local mode-line-format nil)
   (setq-local global-hl-line-mode nil)
+  (setq-local buffer-read-only t)
 
   (use-local-map dashboard-mode-map))
 
@@ -111,7 +112,7 @@
   :group 'dashboard)
 
 (defface dashboard-subtitle-face
-  '((t :foreground "#9399b2" :weight semi-bold))
+  '((t :foreground "#9399b2"))
   "Subtitle face."
   :group 'dashboard)
 
@@ -298,7 +299,8 @@ And adding an ellipsis."
                       (setq dashboard-weathericon weather-icon)
                       (setq dashboard-temperature (format "%.1f" temp))
                       (setq dashboard-weatherdescription (format "%s" (dashboard--weather-code-to-string weather-code))))
-                    (dashboard--refresh-screen))
+                    (when (dashbord--isActive)
+                      (dashboard--refresh-screen)))
                   nil
                   t)))
 
@@ -310,7 +312,7 @@ And adding an ellipsis."
     (add-hook 'window-size-change-functions #'dashboard--redisplay-buffer-on-resize)
     (add-hook 'emacs-startup-hook (lambda ()
                                     (dashboard--refresh-screen)
-                                    (when (dashboard--show-weather-info)
+                                    (when (and (dashboard--show-weather-info) (dashbord--isActive))
                                       (dashboard--fetch-weather-data))))))
 
 (defun dashboard--truncate-text-right (text)
@@ -391,6 +393,11 @@ and parse it json and call (as CALLBACK)."
     (length elpaca--queued))
    (t 0)))
 
+(defun dashbord--isActive ()
+  "Check if buffer is active and visible."
+  (or (eq dashboard-buffer (window-buffer (selected-window)))
+      (get-buffer-window dashboard-buffer 'visible)))
+
 (defun dashboard--refresh-screen ()
   "Show the dashboard screen."
   (setq dashboard-recentfiles (seq-take recentf-list 9))
@@ -422,7 +429,6 @@ and parse it json and call (as CALLBACK)."
         (dashboard--insert-centered (propertize (format-time-string "%A, %B %d %R") 'face 'dashboard-time-face))
 
         (switch-to-buffer dashboard-buffer)
-        (read-only-mode +1)
         (welcome-dashboard-mode)
         (goto-char (point-min))
         (forward-line 3)))))
