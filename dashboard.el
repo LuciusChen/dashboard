@@ -358,30 +358,6 @@ And adding an ellipsis."
                                         (propertize "℃" 'face 'dashboard-text-info-face)))
       (dashboard--insert-text (propertize "Loading weather data..." 'face 'dashboard-weather-temperature-face)))))
 
-(defun dashboard--parse-todo-result (result)
-  "Parse the RESULT and create a list of todo items."
-  (let ((regex "\\(.+?\\):\\([0-9]+\\):\\([0-9]+\\):\s?\\W+\\(.*\\):\\(.*\\)$"))
-    (save-match-data
-      (let (matches todos)
-        (while (string-match regex result)
-          (setq matches (list (match-string 1 result)
-                              (match-string 2 result)
-                              (match-string 3 result)
-                              (match-string 4 result)
-                              (match-string 5 result)))
-          (setq result (substring result (match-end 0)))
-          (push matches todos))
-        (nreverse todos)))))
-
-(cl-defun dashboard--async-command-to-string (&key command &key callback)
-  "Async shell command to JSON run async (as COMMAND)
-and parse it json and call (as CALLBACK)."
-  (async-start
-   `(lambda ()
-      (shell-command-to-string ,command))
-   `(lambda (result)
-      (funcall ,callback result))))
-
 (defun dashboard--package-length ()
   "Get the number of installed packages."
   (cond
