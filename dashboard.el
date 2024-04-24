@@ -84,7 +84,7 @@
 
     ;; Add shortcuts for file indexes
     (dolist (i (number-sequence 1 9))
-      (define-key map (kbd (concat "C-" (number-to-string i)))
+      (define-key map (kbd (concat "M-" (number-to-string i)))
                   `(lambda ()
                      (interactive)
                      (dashboard--open-recent-file-at-index ,i))))
@@ -106,7 +106,7 @@
   (use-local-map dashboard-mode-map))
 
 (defface dashboard-title-face
-  '((t :foreground "#87AAF8" :height 1.2 :weight thin :italic t))
+  '((t :foreground "#8787d8" :height 1.2 :italic t))
   "Title face."
   :group 'dashboard)
 
@@ -126,7 +126,7 @@
   :group 'dashboard)
 
 (defface dashboard-path-face
-  '((t :foreground "#63677D" :height 0.9 :weight thin :bold nil :italic nil))
+  '((t :inherit font-lock-comment-face :height 0.9 :weight thin :bold nil :italic nil))
   "Face for the file path."
   :group 'dashboard)
 
@@ -136,7 +136,7 @@
   :group 'dashboard)
 
 (defface dashboard-time-face
-  '((t :foreground "#a6adc8" :height 0.9 :weight thin))
+  '((t :inherit font-lock-comment-face :height 0.9 :weight thin))
   "Face for time."
   :group 'dashboard)
 
@@ -146,7 +146,7 @@
   :group 'dashboard)
 
 (defface dashboard-startup-time-face
-  '((t :foreground "#C2A4F8" :height 0.9 :weight thin :bold nil :italic nil))
+  '((t :foreground "#ab82f7" :height 0.9 :weight thin :bold nil :italic nil))
   "Face for startup time."
   :group 'dashboard)
 
