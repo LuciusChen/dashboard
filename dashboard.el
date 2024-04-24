@@ -106,7 +106,7 @@
   (use-local-map dashboard-mode-map))
 
 (defface dashboard-title-face
-  '((t :foreground "#87AAF8" :height 1.2 :weight thin))
+  '((t :foreground "#87AAF8" :height 1.2 :weight thin :italic t))
   "Title face."
   :group 'dashboard)
 
@@ -121,7 +121,7 @@
   :group 'dashboard)
 
 (defface dashboard-text-info-face
-  '((t :foreground "#ADB5D0" :height 0.9 :bold nil))
+  '((t :inherit font-lock-comment-face :height 0.9 :bold nil))
   "Face added to code-usage display."
   :group 'dashboard)
 
