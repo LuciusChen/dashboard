@@ -79,7 +79,6 @@
 (defvar dashboard-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'dashboard--open-recent-file)
-    (define-key map (kbd "<return>") 'dashboard--open-recent-file)
     (define-key map (kbd "o") 'dashboard--open-recent-file)
 
     ;; Add shortcuts for file indexes
