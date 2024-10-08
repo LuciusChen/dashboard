@@ -103,6 +103,7 @@
   (setq-local global-hl-line-mode nil)
   (setq-local buffer-read-only t)
 
+  (setq-local buffer-read-only t)
   (use-local-map dashboard-mode-map))
 
 (defface dashboard-title-face
@@ -131,7 +132,7 @@
   :group 'dashboard)
 
 (defface dashboard-filename-face
-  '((t :weight semi-bold))
+  '((t :foreground "#ADB5D9" :weight semi-bold))
   "Face for the file name."
   :group 'dashboard)
 
@@ -298,7 +299,7 @@ And adding an ellipsis."
                       (setq dashboard-weathericon weather-icon)
                       (setq dashboard-temperature (format "%.1f" temp))
                       (setq dashboard-weatherdescription (format "%s" (dashboard--weather-code-to-string weather-code))))
-                    (when (dashbord--isActive)
+                    (when (dashboard--isActive)
                       (dashboard--refresh-screen)))
                   nil
                   t)))
@@ -311,7 +312,7 @@ And adding an ellipsis."
     (add-hook 'window-size-change-functions #'dashboard--redisplay-buffer-on-resize)
     (add-hook 'emacs-startup-hook (lambda ()
                                     (dashboard--refresh-screen)
-                                    (when (and (dashboard--show-weather-info) (dashbord--isActive))
+                                    (when (and (dashboard--show-weather-info) (dashboard--isActive))
                                       (dashboard--fetch-weather-data))))))
 
 (defun dashboard--truncate-text-right (text)
@@ -368,7 +369,7 @@ And adding an ellipsis."
     (length elpaca--queued))
    (t 0)))
 
-(defun dashbord--isActive ()
+(defun dashboard--isActive ()
   "Check if buffer is active and visible."
   (or (eq dashboard-buffer (window-buffer (selected-window)))
       (get-buffer-window dashboard-buffer 'visible)))
