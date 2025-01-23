@@ -34,6 +34,11 @@
   :group 'dashboard
   :type '(string))
 
+(defcustom dashboard-show-file-path nil
+  "Show file path in welcome-dashboard."
+  :group 'dashboard
+  :type '(boolean))
+
 (defcustom dashboard-min-left-padding 10
   "Minimum left padding when resizing window."
   :group 'dashboard
@@ -76,6 +81,13 @@
 (defconst dashboard-buffer "*welcome*"
   "dashboard buffer name.")
 
+(defvar dashboard--file-icon-cache (make-hash-table :test 'equal)
+  "Cache for file icons.")
+(defvar dashboard--padding-cache nil
+  "Cache for padding.")
+(defvar dashboard--last-window-width nil
+  "Last window width.")
+
 (defvar dashboard-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "RET") 'dashboard--open-recent-file)
@@ -92,7 +104,7 @@
   "Keymap for `dashboard-mode'.")
 
 (define-derived-mode welcome-dashboard-mode fundamental-mode "dashboard"
-  "Major mode for the dashboard screen."
+  "Major mode for the welcome-dashboard screen."
   :group 'dashboard
   :syntax-table nil
   :abbrev-table nil
@@ -101,13 +113,11 @@
   (setq-local truncate-lines t)
   (setq-local mode-line-format nil)
   (setq-local global-hl-line-mode nil)
-  (setq-local buffer-read-only t)
-
   (setq-local buffer-read-only t)
   (use-local-map dashboard-mode-map))
 
 (defface dashboard-title-face
-  '((t :foreground "#8787d8" :height 1.2 :italic t))
+  '((t :inherit font-lock-constant-face :height 1.3 :italic t))
   "Title face."
   :group 'dashboard)
 
@@ -116,23 +126,28 @@
   "Subtitle face."
   :group 'dashboard)
 
+(defface dashboard-separator-face
+  '((t :inherit 'font-lock-comment-face))
+  "Separator face."
+  :group 'dashboard)
+
 (defface dashboard-info-face
-  '((t :foreground "#F66D86" :height 0.9 :bold t :italic t))
+  '((t :inherit font-lock-property-name-face :height 0.9 :bold t :italic t))
   "Face added to code-usage display."
   :group 'dashboard)
 
 (defface dashboard-text-info-face
-  '((t :inherit font-lock-comment-face :height 0.9 :bold nil))
+  '((t :inherit default :height 0.9 :bold nil))
   "Face added to code-usage display."
   :group 'dashboard)
 
 (defface dashboard-path-face
-  '((t :inherit font-lock-comment-face :height 0.9 :weight thin :bold nil :italic nil))
+  '((t :inherit font-lock-builtin-face :height 0.9 :weight thin :bold nil :italic nil))
   "Face for the file path."
   :group 'dashboard)
 
 (defface dashboard-filename-face
-  '((t :foreground "#ADB5D9" :weight semi-bold))
+  '((t :inherit default :weight semi-bold))
   "Face for the file name."
   :group 'dashboard)
 
@@ -152,7 +167,7 @@
   :group 'dashboard)
 
 (defface dashboard-shortcut-face
-  '((t :foreground "#E2943B" :height 0.9 :bold t))
+  '((t :inherit font-lock-constant-face :height 0.9 :bold t))
   "Face for recent files shortcuts."
   :group 'dashboard)
 
@@ -241,7 +256,7 @@ And adding an ellipsis."
 (defun dashboard--insert-recent-files ()
   "Insert the first x recent files with icons in the dashboard buffer."
   (recentf-mode)
-  (insert "\n")
+  (setq dashboard-recentfiles (seq-take recentf-list 9))
   (let* ((files dashboard-recentfiles)
          (left-margin (dashboard--calculate-padding-left)))
     (dolist (file files)
@@ -251,9 +266,12 @@ And adding an ellipsis."
              (file-name (file-name-nondirectory file))
              (file-dir (file-name-directory file))
              (title (format "%s %s%s"
-                            (propertize (cond ((not (file-exists-p file)) (nerd-icons-faicon "nf-fa-remove" :face '(:inherit nerd-icons-red)))
-                                              ((file-directory-p file) (nerd-icons-icon-for-dir file))
-                                              (t (nerd-icons-icon-for-file file))))
+                            (or (gethash file dashboard--file-icon-cache)
+                                (puthash file
+                                         (propertize (cond ((not (file-exists-p file)) (nerd-icons-mdicon "nf-md-alert_remove" :face '(:inherit nerd-icons-orange)))
+                                                           ((file-directory-p file) (nerd-icons-icon-for-dir file))
+                                                           (t (nerd-icons-icon-for-file file))))
+                                         dashboard--file-icon-cache))
                             (propertize (dashboard--truncate-path-in-middle file-dir dashboard-path-max-length) 'face 'dashboard-path-face)
                             (propertize file-name 'face 'dashboard-filename-face)))
              (title-with-path (propertize title 'path full-path))
@@ -263,13 +281,22 @@ And adding an ellipsis."
 
 (defun dashboard--calculate-padding-left ()
   "Calculate padding for left side."
-  (if-let* ((files dashboard-recentfiles)
-            (max-length (apply #'max (mapcar (lambda (path) (length (dashboard--truncate-path-in-middle path dashboard-path-max-length))) files)))
-            (filenames (mapcar (lambda (path) (file-name-nondirectory path)) files))
-            (max-filename-length (/ (apply #'max (mapcar 'length filenames)) 2))
-            (left-margin (max (+ dashboard-min-left-padding max-filename-length) (/ (- (window-width) max-length) 2))))
-      (- left-margin max-filename-length)
-    dashboard-min-left-padding))
+  (let ((current-width (window-width)))
+    (when (or (null dashboard--padding-cache)
+              (not (eq current-width dashboard--last-window-width)))
+      (setq dashboard--last-window-width current-width)
+      (setq dashboard--padding-cache
+            (if-let* ((files dashboard-recentfiles)
+                      (max-length (apply #'max (mapcar (lambda (path)
+                                                         (length (dashboard--truncate-path-in-middle path dashboard-path-max-length)))
+                                                       files)))
+                      (filenames (mapcar (lambda (path) (file-name-nondirectory path)) files))
+                      (max-filename-length (/ (apply #'max (mapcar #'length filenames)) 2))
+                      (left-margin (max (+ dashboard-min-left-padding max-filename-length)
+                                        (/ (- current-width max-length) 2))))
+                (- left-margin max-filename-length)
+              dashboard-min-left-padding)))
+    dashboard--padding-cache))
 
 (defun dashboard--insert-text (text)
   "Insert (as TEXT)."
@@ -281,11 +308,12 @@ And adding an ellipsis."
   (when (equal (buffer-name) dashboard-buffer)
     (dashboard--refresh-screen)))
 
-(defun dashboard--fetch-weather-data ()
-  "Fetch weather data from API."
+(defun dashboard--fetch-weather-data (&optional initial)
+  "Fetch weather data from API. INITIAL indicates if this is the first fetch."
   (let ((url-request-method "GET")
         (url-request-extra-headers '(("Content-Type" . "application/json")))
-        (url (format "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current_weather=true" dashboard-latitude dashboard-longitude)))
+        (url (format "https://api.open-meteo.com/v1/forecast?latitude=%s&longitude=%s&current_weather=true"
+                     dashboard-latitude dashboard-longitude)))
     (url-retrieve url
                   (lambda (_)
                     (goto-char (point-min))
@@ -298,9 +326,13 @@ And adding an ellipsis."
                            (weather-icon (dashboard--weather-icon-from-code weather-code)))
                       (setq dashboard-weathericon weather-icon)
                       (setq dashboard-temperature (format "%.1f" temp))
-                      (setq dashboard-weatherdescription (format "%s" (dashboard--weather-code-to-string weather-code))))
-                    (when (dashboard--isActive)
-                      (dashboard--refresh-screen)))
+                      (setq dashboard-weatherdescription
+                            (format "%s" (dashboard--weather-code-to-string weather-code)))
+                      ;; Only set up the recurring timer after initial fetch
+                      (when initial
+                        (run-with-timer 900 900 #'dashboard--fetch-weather-data))
+                      (when (dashboard--isActive)
+                        (dashboard--refresh-screen))))
                   nil
                   t)))
 
@@ -308,17 +340,17 @@ And adding an ellipsis."
 (defun dashboard-create-hook ()
   "Setup dashboard screen."
   (when (< (length command-line-args) 2)
-    (add-hook 'switch-to-buffer #'dashboard--redisplay-buffer-on-resize)
-    (add-hook 'window-size-change-functions #'dashboard--redisplay-buffer-on-resize)
+    (remove-hook 'switch-to-buffer #'dashboard--redisplay-buffer-on-resize)
+    (add-hook 'window-configuration-change-hook #'dashboard--redisplay-buffer-on-resize)
     (add-hook 'emacs-startup-hook (lambda ()
                                     (dashboard--refresh-screen)
-                                    (when (and (dashboard--show-weather-info) (dashboard--isActive))
-                                      (dashboard--fetch-weather-data))))))
+                                    (when (dashboard--show-weather-info)
+                                      (run-with-idle-timer 0.1 nil #'dashboard--fetch-weather-data t))))))
 
 (defun dashboard--truncate-text-right (text)
   "Truncate TEXT at the right to a maximum of 100 characters."
-  (if (> (length text) 70)
-      (concat (substring text 0 67) "...")
+  (if (> (length text) dashboard-path-max-length)
+      (concat (substring text 0 (- dashboard-path-max-length 3)) "...")
     text))
 
 (defun dashboard--insert-startup-time ()
@@ -388,8 +420,9 @@ And adding an ellipsis."
       (erase-buffer)
       (goto-char (point-min))
       (let ((inhibit-read-only t))
-        (insert "\n")
         (dashboard--insert-text (propertize dashboard-title 'face 'dashboard-title-face))
+        (insert "\n")
+        ;; (dashboard--insert-separator)
         (dashboard--insert-recent-files)
         (setq cursor-type nil)
 
@@ -398,16 +431,23 @@ And adding an ellipsis."
         (dashboard--insert-package-info packages)
         (dashboard--insert-weather-info)
 
+        (insert "\n")
+        (dashboard--insert-centered (propertize (format-time-string "%A, %B %d %R") 'face 'welcome-dashboard-time-face))
+
         (insert "\n\n")
         (insert (make-string left-margin ?\ ))
         (insert-image image)
-        (insert "\n\n")
-        (dashboard--insert-centered (propertize (format-time-string "%A, %B %d %R") 'face 'dashboard-time-face))
 
         (switch-to-buffer dashboard-buffer)
         (welcome-dashboard-mode)
         (goto-char (point-min))
         (forward-line 3)))))
+
+(defun dashboard--insert-separator ()
+  "Insert a separator line."
+  (insert "\n")
+  (dashboard--insert-text
+   (propertize (make-string (+ dashboard-path-max-length (* dashboard-min-left-padding 2)) ?─) 'face 'dashboard-separator-face)))
 
 (provide 'dashboard)
 ;;; dashboard.el ends here
