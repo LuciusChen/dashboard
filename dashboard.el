@@ -424,7 +424,7 @@
         (dashboard--insert-weather-info)
 
         (insert "\n")
-        (dashboard--insert-centered (propertize (format-time-string "%A, %B %d %R") 'face 'welcome-dashboard-time-face))
+        (dashboard--insert-centered (propertize (format-time-string "%A, %B %d %R") 'face 'dashboard-time-face))
 
         (insert "\n\n")
         (insert (make-string left-margin ?\ ))
