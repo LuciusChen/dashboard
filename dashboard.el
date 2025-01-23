@@ -81,10 +81,12 @@
 
 (defvar dashboard--file-icon-cache (make-hash-table :test 'equal)
   "Cache for file icons.")
-(defvar dashboard--padding-cache nil
-  "Cache for padding.")
-(defvar dashboard--last-window-width nil
-  "Last window width.")
+
+(defvar-local dashboard--padding-cache nil
+  "Cache for padding in the dashboard buffer.")
+
+(defvar-local dashboard--last-window-width nil
+  "Last window width in the dashboard buffer.")
 
 (defvar dashboard-mode-map
   (let ((map (make-sparse-keymap)))
@@ -315,15 +317,13 @@
                     (goto-char (point-min))
                     (re-search-forward "^$")
                     (let* ((json-data (buffer-substring-no-properties (point) (point-max)))
-                           (json-obj (json-read-from-string json-data))
-                           (current-weather (cdr (assoc 'current_weather json-obj)))
-                           (temp (cdr (assoc 'temperature current-weather)))
-                           (weather-code (cdr (assoc 'weathercode current-weather)))
-                           (weather-icon (dashboard--weather-icon-from-code weather-code)))
-                      (setq dashboard-weathericon weather-icon)
-                      (setq dashboard-temperature (format "%.1f" temp))
-                      (setq dashboard-weatherdescription
-                            (format "%s" (dashboard--weather-code-to-string weather-code)))
+                           (json-obj (json-read-from-string json-data)))
+                      (let-alist json-obj
+                        (setq dashboard-temperature (format "%.1f" .current_weather.temperature))
+                        (setq dashboard-weatherdescription
+                              (format "%s" (dashboard--weather-code-to-string .current_weather.weathercode)))
+                        (setq dashboard-weathericon
+                              (dashboard--weather-icon-from-code .current_weather.weathercode)))
                       ;; Only set up the recurring timer after initial fetch
                       (when initial
                         (run-with-timer 900 900 #'dashboard--fetch-weather-data))
