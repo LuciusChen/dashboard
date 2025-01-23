@@ -2,7 +2,7 @@
 
 ;; Welcome-dashboard screen
 
-;; Authod: Mikael Konradsson <mikael.konradsson@outlook.com>
+;; Author: Mikael Konradsson <mikael.konradsson@outlook.com>
 ;; Maintainer: Mikael Konradsson <mikael.konradsson@outlook.com>
 ;; Created: 2023
 ;; Version: 0.1
@@ -22,64 +22,62 @@
 ;;; Code:
 
 (defvar welcome-dashboard-mode nil)
-(defvar dashboard-recentfiles '()
-  "Recent list.")
-
+(defvar dashboard-recentfiles '() "Recent list.")
 (defvar dashboard-temperature nil)
 (defvar dashboard-weatherdescription nil)
 (defvar dashboard-weathericon nil)
 
 (defcustom dashboard-title "Quick access [C-number to open file]"
-  "dashboard title."
+  "Dashboard title."
   :group 'dashboard
-  :type '(string))
+  :type 'string)
 
 (defcustom dashboard-show-file-path nil
   "Show file path in welcome-dashboard."
   :group 'dashboard
-  :type '(boolean))
+  :type 'boolean)
 
 (defcustom dashboard-min-left-padding 10
   "Minimum left padding when resizing window."
   :group 'dashboard
-  :type '(natnum))
+  :type 'natnum)
 
 (defcustom dashboard-path-max-length 72
-  "Latitude for weather information."
+  "Maximum path length for display."
   :group 'dashboard
-  :type '(natnum))
+  :type 'natnum)
 
 (defcustom dashboard-latitude nil
   "Latitude for weather information."
   :group 'dashboard
-  :type '(float))
+  :type 'float)
 
 (defcustom dashboard-longitude nil
   "Longitude for weather information in dashboard package."
   :group 'dashboard
-  :type '(float))
+  :type 'float)
 
 (defcustom dashboard-image-file ""
   "Image file in dashboard package."
   :group 'dashboard
-  :type '(file))
+  :type 'file)
 
 (defcustom dashboard-image-width 200
   "Image width for weather information."
   :group 'dashboard
-  :type '(natnum))
+  :type 'natnum)
 
 (defcustom dashboard-image-height 200
-  "Image width for weather information."
+  "Image height for weather information."
   :group 'dashboard
-  :type '(natnum))
+  :type 'natnum)
 
 (defgroup dashboard nil
-  "dashboard group."
+  "Dashboard group."
   :group 'applications)
 
 (defconst dashboard-buffer "*welcome*"
-  "dashboard buffer name.")
+  "Dashboard buffer name.")
 
 (defvar dashboard--file-icon-cache (make-hash-table :test 'equal)
   "Cache for file icons.")
@@ -182,7 +180,7 @@
   :group 'dashboard)
 
 (defun dashboard--weather-icon-from-code (code)
-  "Maps a weather (as CODE) to a corresponding string."
+  "Map weather CODE to a corresponding string."
   (nerd-icons-wicon
    (pcase code
      (`0 "nf-weather-day_sunny")
@@ -200,7 +198,7 @@
      (_ "Unknown"))))
 
 (defun dashboard--weather-code-to-string (code)
-  "Maps a weather (as CODE) to a corresponding string."
+  "Map weather CODE to a corresponding string."
   (pcase code
     (`0 "Clear sky")
     ((or `1 `2 `3) "Partly cloudy")
@@ -242,8 +240,7 @@
       (find-file (nth (1- index) files)))))
 
 (defun dashboard--truncate-path-in-middle (path n)
-  "Truncate the middle of PATH to length N by removing characters.
-And adding an ellipsis."
+  "Truncate the middle of PATH to length N by removing characters and adding an ellipsis."
   (if (<= (length path) n)
       path
     (let* ((left (/ (- n 3) 2))
@@ -278,7 +275,6 @@ And adding an ellipsis."
              (title-with-path-and-shortcut (concat title-with-path (propertize (format " [%s]" shortcut) 'face 'dashboard-shortcut-face))))
         (insert (format "%s%s\n" (make-string left-margin ?\s) title-with-path-and-shortcut))))))
 
-
 (defun dashboard--calculate-padding-left ()
   "Calculate padding for left side."
   (let ((current-width (window-width)))
@@ -299,7 +295,7 @@ And adding an ellipsis."
     dashboard--padding-cache))
 
 (defun dashboard--insert-text (text)
-  "Insert (as TEXT)."
+  "Insert TEXT with left padding."
   (let ((left-margin (dashboard--calculate-padding-left)))
     (insert (format "%s%s\n" (make-string left-margin ?\s) text))))
 
@@ -362,9 +358,8 @@ And adding an ellipsis."
                                   (propertize (emacs-init-time "%.2f") 'face 'dashboard-startup-time-face)
                                   (propertize "seconds" 'face 'dashboard-text-info-face))))
 
-
 (defun dashboard--insert-package-info (packages)
-  "Insert package info as (PACKAGES)."
+  "Insert package info as PACKAGES."
   (dashboard--insert-text (format "%s %s %s"
                                   (propertize (nerd-icons-codicon "nf-cod-package")
                                               'display '(raise -0.1))
@@ -372,12 +367,9 @@ And adding an ellipsis."
                                   (propertize "packages loaded" 'face 'dashboard-text-info-face 'display '(raise -0.1)))))
 
 (defun dashboard--show-weather-info ()
-  "Check if we latitude and longitude and then show weather info."
-  (let ((latitude dashboard-latitude)
-        (longitude dashboard-longitude))
-    (if (and (floatp latitude) (floatp longitude) (> latitude 0.0) (> longitude 0.0))
-        t
-      nil)))
+  "Check if we have latitude and longitude to show weather info."
+  (and (floatp dashboard-latitude) (floatp dashboard-longitude)
+       (> dashboard-latitude 0.0) (> dashboard-longitude 0.0)))
 
 (defun dashboard--insert-weather-info ()
   "Insert weather info."
