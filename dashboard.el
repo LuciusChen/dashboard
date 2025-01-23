@@ -142,7 +142,7 @@
   :group 'dashboard)
 
 (defface dashboard-path-face
-  '((t :inherit font-lock-builtin-face :height 0.9 :weight thin :bold nil :italic nil))
+  '((t :inherit font-lock-comment-face :height 0.9 :weight thin :bold nil :italic nil))
   "Face for the file path."
   :group 'dashboard)
 
