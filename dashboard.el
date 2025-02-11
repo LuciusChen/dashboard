@@ -95,7 +95,7 @@
 
     ;; Add shortcuts for file indexes
     (dolist (i (number-sequence 1 9))
-      (define-key map (kbd (concat "S-" (number-to-string i)))
+      (define-key map (kbd (concat "M-s-" (number-to-string i)))
                   `(lambda ()
                      (interactive)
                      (dashboard--open-recent-file-at-index ,i))))
