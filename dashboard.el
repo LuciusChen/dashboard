@@ -267,7 +267,7 @@
              (title (format "%s %s%s"
                             (or (gethash file dashboard--file-icon-cache)
                                 (puthash file
-                                         (propertize (cond ((not (file-exists-p file)) (nerd-icons-mdicon "nf-md-alert_remove" :face '(:inherit nerd-icons-orange)))
+                                         (propertize (cond ((not (file-exists-p file)) (nerd-icons-mdicon "nf-md-file_remove" :face '(:inherit nerd-icons-red)))
                                                            ((file-directory-p file) (nerd-icons-icon-for-dir file))
                                                            (t (nerd-icons-icon-for-file file))))
                                          dashboard--file-icon-cache))
