@@ -327,7 +327,7 @@
                       ;; Only set up the recurring timer after initial fetch
                       (when initial
                         (run-with-timer 900 900 #'dashboard--fetch-weather-data))
-                      (when (dashboard--isActive)
+                      (when (dashboard--is-active)
                         (dashboard--refresh-screen))))
                   nil
                   t)))
@@ -393,7 +393,7 @@
     (length elpaca--queued))
    (t 0)))
 
-(defun dashboard--isActive ()
+(defun dashboard--is-active ()
   "Check if buffer is active and visible."
   (or (eq dashboard-buffer (window-buffer (selected-window)))
       (get-buffer-window dashboard-buffer 'visible)))
